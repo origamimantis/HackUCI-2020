@@ -6,6 +6,7 @@ const port = 4141;
 
 
 app.set("views", __dirname + "/views");
+app.set("view engine", "html");
 
 
 app.get("/",  (req, res) => {

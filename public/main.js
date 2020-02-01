@@ -8,18 +8,25 @@ class CanvasControl {
 	}
 
 	penDown(x, y) {
-		this.ctx.moveTo(x - this.canvas.offsetLeft, y - this.canvas.offsetTop);
+		this.ctx.moveTo(x, y);
 		this.ctx.beginPath();
 		this._penDown = true;
 	}
 	draw(x, y) {
 		if (this._penDown == true) {
-			this.ctx.lineTo(x - this.canvas.offsetLeft, y - this.canvas.offsetTop);
+			this.ctx.lineTo(x, y);
 			this.ctx.stroke();
 		}
 	}
 	penUp() {
 		this._penDown = false;
+	}
+
+	adjustScreenPos(pageX, pageY) {
+		return {
+			x: pageX - this.canvas.offsetLeft,
+			y: pageY - this.canvas.offsetTop
+		};
 	}
 }
 
@@ -32,11 +39,13 @@ window.onload = () => {
 	let control = new CanvasControl(canvas);
 	
 	window.onmousedown = (e) => {
-		control.penDown(e.clientX, e.clientY);
+		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+		control.penDown(adjustedPosition.x, adjustedPosition.y);
 	}
 
 	window.onmousemove = (e) => {
-		control.draw(e.clientX, e.clientY);
+		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+		control.draw(adjustedPosition.x, adjustedPosition.y);
 	}
 	
 	window.onmouseup = (e) => {

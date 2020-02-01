@@ -10,8 +10,14 @@ app.use(express.static(__dirname + "/public"));
 
 
 app.get("/",  (req, res) => {
-	console.log("access");
 	res.sendFile( __dirname + "/views/index.html");
 });
 
-http.createServer(app).listen(port, () => console.log("I work"));
+let server = http.createServer(app).listen(port);//, () => console.log("I work"));
+
+const io = require("socket.io")(server);
+
+io.on("connection", (socket)=>
+  {
+    console.log("socketed");
+  });

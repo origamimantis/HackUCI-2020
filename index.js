@@ -2,9 +2,15 @@ const express = require("express");
 const fs = require("fs");
 const https = require('https');
 
+//const KEY = "/etc/letsencrypt/live/applenoodlesmoothie.tech/privkey.pem";
+//const CERT = "/etc/letsencrypt/live/applenoodlesmoothie.tech/fullchain.pem";
+
+const KEY = "../privkey.pem";
+const CERT = "../fullchain.pem";
+
 const options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/applenoodlesmoothie.tech/privkey.pem"),
-  cert: fs.readFileSync("/etc/letsencrypt/live/applenoodlesmoothie.tech/fullchain.pem")
+  key: fs.readFileSync(KEY),
+  cert: fs.readFileSync(CERT)
 
 }
 

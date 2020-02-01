@@ -9,6 +9,11 @@ export class CanvasControl {
 		this._penDown = false;
 
 		this.ctx.strokeStyle = "#000000";
+
+		this._lastPan = {
+			x: 0,
+			y: 0
+		}
 	}
 
 	penDown(x, y) {
@@ -24,6 +29,23 @@ export class CanvasControl {
 	}
 	penUp() {
 		this._penDown = false;
+	}
+	
+	panStart(clientX, clientY) {
+		this._lastPan = {
+			x: this.canvas.offsetLeft,
+			y: this.canvas.offsetTop,
+			mouseX: clientX,
+			mouseY: clientY
+		}
+		this._penDown = true;
+	}
+
+	pan(clientX, clientY) {
+		if (this._penDown == true) {
+			this.canvas.style.left = (clientX - this._lastPan.mouseX) + this._lastPan.x + "px";
+			this.canvas.style.top = (clientY - this._lastPan.mouseY) + this._lastPan.y + "px";
+		}
 	}
 
 	adjustScreenPos(pageX, pageY) {
@@ -55,6 +77,8 @@ window.onload = () => {
 		if (StateManager.getDrawMode() == StateManager.CURSOR) {
 			let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
 			control.penDown(adjustedPosition.x, adjustedPosition.y);
+		} else if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.panStart(e.clientX, e.clientY);
 		}
 	}
 
@@ -62,12 +86,20 @@ window.onload = () => {
 		if (StateManager.getDrawMode() == StateManager.CURSOR) {
 			let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
 			control.draw(adjustedPosition.x, adjustedPosition.y);
+		} else if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.pan(e.clientX, e.clientY);
 		}
 	}
 	
 	window.onmouseup = (e) => {
-		if (StateManager.getDrawMode() == StateManager.CURSOR) {
+		if (StateManager.getDrawMode() == StateManager.CURSOR || StateManager.getDrawMode() == StateManager.PAN) {
 			control.penUp();
 		}
 	}
+
+	window.addEventListener("keydown", (e) => {
+		if (e.key == "h") {
+			StateManager.setDrawMode(StateManager.PAN);
+		}
+	});
 }

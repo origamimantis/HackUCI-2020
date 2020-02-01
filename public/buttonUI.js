@@ -16,12 +16,7 @@ var ToggleButton = function (_React$Component) {
 	function ToggleButton(props) {
 		_classCallCheck(this, ToggleButton);
 
-		var _this = _possibleConstructorReturn(this, (ToggleButton.__proto__ || Object.getPrototypeOf(ToggleButton)).call(this, props));
-
-		_this.state = {
-			clicked: false
-		};
-		return _this;
+		return _possibleConstructorReturn(this, (ToggleButton.__proto__ || Object.getPrototypeOf(ToggleButton)).call(this, props));
 	}
 
 	_createClass(ToggleButton, [{
@@ -29,23 +24,32 @@ var ToggleButton = function (_React$Component) {
 		value: function render() {
 			var _this2 = this;
 
-			if (this.state.clicked) {
+			if (StateManager.getDrawMode() == StateManager.GYRO) {
 				return React.createElement(
 					'button',
 					{ onClick: function onClick() {
 							StateManager.setDrawMode(StateManager.CURSOR);
-							_this2.setState({ clicked: false });
+							_this2.setState({ changed: true });
 						} },
 					'GYRO MODE'
 				);
-			} else {
+			} else if (StateManager.getDrawMode() == StateManager.CURSOR) {
 				return React.createElement(
 					'button',
 					{ onClick: function onClick() {
 							StateManager.setDrawMode(StateManager.GYRO);
-							_this2.setState({ clicked: true });
+							_this2.setState({ changed: true });
 						} },
 					'CURSOR MODE'
+				);
+			} else if (StateManager.getDrawMode() == StateManager.PAN) {
+				return React.createElement(
+					'button',
+					{ onClick: function onClick() {
+							StateManager.setDrawMode(StateManager.CURSOR);
+							_this2.setState({ changed: true });
+						} },
+					'PAN MODE'
 				);
 			}
 		}

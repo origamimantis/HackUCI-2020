@@ -12,4 +12,4 @@ app.get("/",  (req, res) => {
   res.render("index");
 });
 
-console.log("I work");
+app.listen(port, () => console.log("I work"));

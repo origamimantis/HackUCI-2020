@@ -1,2 +1,2 @@
 # HackUCI-2020
-heckuci 2020
+hackuci 2020

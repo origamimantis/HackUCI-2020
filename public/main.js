@@ -1,42 +1,40 @@
-
-let canvas = document.getElementById("c");
-
-let ctx = canvas.getContext("2d");
-
-ctx.fillRect(0,0,50,50, "black")
-
-
 class CanvasControl {
 	constructor(canvas) {
 		this.canvas = canvas;
 		this.ctx = this.canvas.getContext('2d');
-		this.penDown = false;
+		this._penDown = false;
 
 		this.ctx.strokeStyle = "#000000";
 	}
 
 	penDown(x, y) {
-		ctx.moveTo(x, y);
-		ctx.beginPath();
-		this.penDown = true;
+		this.ctx.moveTo(x - this.canvas.offsetLeft, y - this.canvas.offsetTop);
+		this.ctx.beginPath();
+		this._penDown = true;
 	}
 	draw(x, y) {
-		if (this.penDown == true) {
-			this.lineTo(x, y);
+		console.log(x - this.canvas.offsetLeft, y - this.canvas.offsetTop);
+		if (this._penDown == true) {
+			this.ctx.lineTo(x - this.canvas.offsetLeft, y - this.canvas.offsetTop);
+			this.ctx.stroke();
 		}
 	}
 	penUp() {
-		this.penDown = false;
+		this._penDown = false;
 	}
 }
 
-document.onload = () => {
-	console.log("butt hol");
+window.onload = () => {
 	let canvas = document.getElementById("c");
+	
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
 
 	let control = new CanvasControl(canvas);
-
+	
+	console.log(control);
 	window.onmousedown = (e) => {
+		console.log("down");
 		control.penDown(e.clientX, e.clientY);
 	}
 

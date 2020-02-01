@@ -5,30 +5,36 @@ import { StateManager } from './StateManager.js';
 class ToggleButton extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = {
-			clicked: false
-		}
 	}
 
 	render() {
-		if (this.state.clicked) {
+		if (StateManager.getDrawMode() == StateManager.GYRO) {
 			return (
 				<button onClick={() => {
 					StateManager.setDrawMode(StateManager.CURSOR);
-					this.setState({ clicked: false });
+					this.setState({ changed: true });
 				}}>
 					GYRO MODE
 				</button>
 			);
-		} else {
+		} else if (StateManager.getDrawMode() == StateManager.CURSOR){
 			return (
 				<button onClick={() => {
 					StateManager.setDrawMode(StateManager.GYRO);
-					this.setState({ clicked: true });
+					this.setState({ changed: true });
 				}}>
 					CURSOR MODE
 				</button>
 			);
+		} else if (StateManager.getDrawMode() == StateManager.PAN) {
+			return (
+				<button onClick={() => {
+					StateManager.setDrawMode(StateManager.CURSOR);
+					this.setState({ changed: true });
+				}}>
+					PAN MODE
+				</button>
+			);	
 		}
 	}
 }

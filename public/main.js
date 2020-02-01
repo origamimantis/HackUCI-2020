@@ -99,6 +99,7 @@ window.onload = () => {
 
 	window.addEventListener("keydown", (e) => {
 		if (e.key == "h") {
+			document.querySelector("body").style.cursor = "grab";
 			StateManager.setDrawMode(StateManager.PAN);
 		}
 	});

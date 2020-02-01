@@ -30,6 +30,7 @@ var ToggleButton = function (_React$Component) {
 					{ onClick: function onClick() {
 							StateManager.setDrawMode(StateManager.CURSOR);
 							_this2.setState({ changed: true });
+							document.querySelector("body").style.cursor = "default";
 						} },
 					'GYRO MODE'
 				);
@@ -39,6 +40,7 @@ var ToggleButton = function (_React$Component) {
 					{ onClick: function onClick() {
 							StateManager.setDrawMode(StateManager.GYRO);
 							_this2.setState({ changed: true });
+							document.querySelector("body").style.cursor = "default";
 						} },
 					'CURSOR MODE'
 				);

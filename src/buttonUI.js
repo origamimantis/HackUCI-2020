@@ -13,6 +13,7 @@ class ToggleButton extends React.Component {
 				<button onClick={() => {
 					StateManager.setDrawMode(StateManager.CURSOR);
 					this.setState({ changed: true });
+					document.querySelector("body").style.cursor = "default";
 				}}>
 					GYRO MODE
 				</button>
@@ -22,6 +23,7 @@ class ToggleButton extends React.Component {
 				<button onClick={() => {
 					StateManager.setDrawMode(StateManager.GYRO);
 					this.setState({ changed: true });
+					document.querySelector("body").style.cursor = "default";
 				}}>
 					CURSOR MODE
 				</button>

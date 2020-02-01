@@ -6,8 +6,8 @@ const port = 80;
 
 
 
+app.use(express.static(__dirname + '/public'));
 app.set("views", __dirname + "/views");
-
 
 app.get("/",  (req, res) => {
 	console.log("access");

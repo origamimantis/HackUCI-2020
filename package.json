@@ -18,6 +18,8 @@
   },
   "homepage": "https://github.com/origamimantis/HackUCI-2020#readme",
   "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-react-app": "^3.1.2",
     "express": "^4.17.1"
   }
 }

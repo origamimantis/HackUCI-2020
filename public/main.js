@@ -13,7 +13,6 @@ class CanvasControl {
 		this._penDown = true;
 	}
 	draw(x, y) {
-		console.log(x - this.canvas.offsetLeft, y - this.canvas.offsetTop);
 		if (this._penDown == true) {
 			this.ctx.lineTo(x - this.canvas.offsetLeft, y - this.canvas.offsetTop);
 			this.ctx.stroke();
@@ -32,9 +31,7 @@ window.onload = () => {
 
 	let control = new CanvasControl(canvas);
 	
-	console.log(control);
 	window.onmousedown = (e) => {
-		console.log("down");
 		control.penDown(e.clientX, e.clientY);
 	}
 

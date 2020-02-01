@@ -6,12 +6,10 @@ const port = 80;
 
 
 
-app.use(express.static(__dirname + '/public'));
-app.set("views", __dirname + "/views");
 
 app.get("/",  (req, res) => {
 	console.log("access");
-	res.render("index");
+	res.sendfil("views/index.html");
 });
 
 http.createServer(app).listen(port, () => console.log("I work"));

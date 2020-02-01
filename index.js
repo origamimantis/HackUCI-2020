@@ -1,4 +1,5 @@
 const express = require("express");
+const http = require('http');
 
 const app = express();
 const port = 4141;
@@ -13,4 +14,4 @@ app.get("/",  (req, res) => {
 	res.render("index");
 });
 
-app.listen(port, () => console.log("I work"));
+http.createServer(app).listen(port, () => console.log("I work"));

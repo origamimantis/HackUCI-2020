@@ -1,0 +1,10 @@
+html, body {
+	margin: 0;
+	background-color: #cccccc;
+}
+
+#root {
+	position: absolute;
+	left: 0;
+	top: 0;
+}

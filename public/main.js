@@ -1,5 +1,7 @@
 'use strict';
 
+import { StateManager } from './StateManager.js';
+
 export class CanvasControl {
 	constructor(canvas) {
 		this.canvas = canvas;
@@ -35,22 +37,37 @@ export class CanvasControl {
 window.onload = () => {
 	let canvas = document.getElementById("c");
 	
-	canvas.width = window.innerWidth;
-	canvas.height = window.innerHeight;
+	canvas.width = 640;
+	canvas.height = 480;
+	
+	canvas.style.position = "absolute";
+	console.log(canvas.style.left);
+	canvas.style.left = window.innerWidth / 2 - canvas.width / 2 + "px";
+	canvas.style.top = window.innerHeight / 2 - canvas.height / 2 + "px";
+	
+	let ctx = canvas.getContext('2d');
+	ctx.fillStyle = "#ffffff";
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 	let control = new CanvasControl(canvas);
 	
 	window.onmousedown = (e) => {
-		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
-		control.penDown(adjustedPosition.x, adjustedPosition.y);
+		if (StateManager.getDrawMode() == StateManager.CURSOR) {
+			let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+			control.penDown(adjustedPosition.x, adjustedPosition.y);
+		}
 	}
 
 	window.onmousemove = (e) => {
-		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
-		control.draw(adjustedPosition.x, adjustedPosition.y);
+		if (StateManager.getDrawMode() == StateManager.CURSOR) {
+			let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+			control.draw(adjustedPosition.x, adjustedPosition.y);
+		}
 	}
 	
 	window.onmouseup = (e) => {
-		control.penUp();
+		if (StateManager.getDrawMode() == StateManager.CURSOR) {
+			control.penUp();
+		}
 	}
 }

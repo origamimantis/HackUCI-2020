@@ -1,5 +1,7 @@
 'use strict';
 
+import { StateManager } from './StateManager.js';
+
 class ToggleButton extends React.Component {
 	constructor(props) {
 		super(props);
@@ -11,14 +13,20 @@ class ToggleButton extends React.Component {
 	render() {
 		if (this.state.clicked) {
 			return (
-				<button onClick={() => this.setState({ clicked: false })}>
-					Butt
+				<button onClick={() => {
+					StateManager.setDrawMode(StateManager.CURSOR);
+					this.setState({ clicked: false });
+				}}>
+					GYRO MODE
 				</button>
 			);
 		} else {
 			return (
-				<button onClick={() => this.setState({ clicked: true })}>
-					Poop
+				<button onClick={() => {
+					StateManager.setDrawMode(StateManager.GYRO);
+					this.setState({ clicked: true });
+				}}>
+					CURSOR MODE
 				</button>
 			);
 		}

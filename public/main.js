@@ -1,69 +1,128 @@
 'use strict';
 
 import { StateManager } from './StateManager.js';
+import { CanvasControl } from './CanvasControl.js';
+import { Pointer } from './Pointer.js';
 
-export class CanvasControl {
-	constructor(canvas) {
-		this.canvas = canvas;
-		this.ctx = this.canvas.getContext('2d');
-		this._penDown = false;
 
-		this.ctx.strokeStyle = "#000000";
-
-		this._lastPan = {
-			x: 0,
-			y: 0
-		}
-	}
-
-	penDown(x, y) {
-		this.ctx.moveTo(x, y);
-		this.ctx.beginPath();
-		this._penDown = true;
-	}
-	draw(x, y) {
-		if (this._penDown == true) {
-			this.ctx.lineTo(x, y);
-			this.ctx.stroke();
-		}
-	}
-	penUp() {
-		this._penDown = false;
-	}
-	
-	panStart(clientX, clientY) {
-		this._lastPan = {
-			x: this.canvas.offsetLeft,
-			y: this.canvas.offsetTop,
-			mouseX: clientX,
-			mouseY: clientY
-		}
-		this._penDown = true;
-	}
-
-	pan(clientX, clientY) {
-		if (this._penDown == true) {
-			this.canvas.style.left = (clientX - this._lastPan.mouseX) + this._lastPan.x + "px";
-			this.canvas.style.top = (clientY - this._lastPan.mouseY) + this._lastPan.y + "px";
-		}
-	}
-
-	adjustScreenPos(pageX, pageY) {
-		return {
-			x: pageX - this.canvas.offsetLeft,
-			y: pageY - this.canvas.offsetTop
-		};
-	}
-
-	clearCanvas() {
-		this.ctx.fillStyle = "#ffffff";
-		this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
-	}
+let phoneOriOffset = {
+	a: 0,
+	b: 0,
+	c: 0
 }
 
-function getPosFromAcc()
-{}
 
+let phoneVel = {
+	x: 0,
+	y: 0,
+	z: 0
+};
+
+let socket;
+
+
+let prev = 
+{
+	time : Date.now(),
+
+	x:
+		{
+			a:0,
+			v:0,
+		},
+	y:
+		{
+			a:0,
+			v:0,
+		},
+	z:
+		{
+			a:0,
+			v:0,
+		}
+}
+
+function debug(stuff)
+{
+
+	socket.emit("debug", stuff);
+
+}
+function handleAcc(e)
+{
+}
+/*
+function accrealbad()
+{
+	if (StateManager.getDrawMode() == StateManager.GYRO)
+	{
+		let ctime = Date.now();
+
+		let delta = (ctime - prev.time)*0.01;
+
+		prev.time = ctime;
+
+		let as = 0;
+		let ax = e.acceleration.x;
+		accState.peak += Math.round(ax);
+		fq.enqueue(accState.peak);
+		let v = fq.variance();
+		debug("v: " + v + "    " + fq.l);
+		if (v >= 2)
+		{
+			prev.x.v = Math.sign(accState.peak)*4;
+		}
+		else
+		{
+			prev.x.v = 0
+		}
+	}
+}
+*/
+
+let calib = 
+	{
+		beta: 0,
+		gamma: 0
+	}
+
+function recalibrate()
+{
+	calib.beta = lastAngle.beta;
+	calib.gamma = lastAngle.gamma;
+}
+
+const sensitivity = 2;
+
+let lastAngle = 
+	{
+		beta: 0,
+		gamma: 0
+	}
+
+
+function handleOri(e)
+{
+	
+
+	if (StateManager.getDrawMode() == StateManager.GYRO)
+	{
+		lastAngle.beta = e.beta;
+		lastAngle.gamma = e.gamma;
+
+		// guaranteed -1 <= x,y <= 1
+		let x = (e.gamma-calib.gamma)/90;
+		let y = (e.beta-calib.beta)/90;
+
+		x = Math.max(Math.min( sensitivity*x , 1), -1);
+		y = Math.max(Math.min( sensitivity*y , 1),-1);
+
+
+
+		socket.emit("cursor", {x: (x + 1)*CanvasControl.getCanvasWidth()/2, y: (y + 1)*CanvasControl.getCanvasHeight()/2});
+	}
+
+}
 
 
 window.onload = () => {
@@ -71,133 +130,190 @@ window.onload = () => {
 	
 	canvas.width = 640;
 	canvas.height = 480;
+		
 	
 	canvas.style.position = "absolute";
 	canvas.style.left = window.innerWidth / 2 - canvas.width / 2 + "px";
 	canvas.style.top = window.innerHeight / 2 - canvas.height / 2 + "px";
 	
-	let control = new CanvasControl(canvas);
+	CanvasControl.init(canvas);
+
+	window.navigator.permissions.query({name:"accelerometer"})
+                                 .then((res) => {console.log(res.state)});
+
+	if (window.DeviceMotionEvent)
+	{
+	//	window.addEventListener("devicemotion", handleAcc);
+		window.addEventListener("deviceorientation", handleOri);
+	}
+	else
+	{
+		console.log("no accelerometer");
+	}
+
+	
+	let control = CanvasControl;
 	
 	control.clearCanvas();
 
 	// Socketing stuff
 	let onServConn = new CustomEvent("onServConn", { detail: { id : "0000" } });
-	let socket = io.connect("https://applenoodlesmoothie.tech");
+	socket = io.connect("https://applenoodlesmoothie.tech");
 	
 	socket.on("id", (e) => {
 		onServConn.detail.id = e.id;
 		document.dispatchEvent(onServConn);
 	});
 
+	debug("");debug("");debug("");debug("");debug("");debug("");debug("");debug("");debug("");debug("");debug("");debug("");
+	// Pointer shiz
+	Pointer.init(document.getElementById("pointer"));
+	
+	let personalDrawingID = 0;
+	let isDrawing = false;
 
 	window.onmousedown = (e) => {
+		if (StateManager.getDrawMode() == StateManager.GYRO) {
+			return; // Don't get up in our monkey bussiness
+		}
+		isDrawing = true;
 		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+		personalDrawingID = CanvasControl.generateUniqueID();
 		socket.emit("canvas_data",{
 			mode: StateManager.getDrawMode(),
-			event: "down",
+			event: "mdown",
 			x: adjustedPosition.x,
-			y: adjustedPosition.y
+			y: adjustedPosition.y,
+			id: personalDrawingID
 		});
 	}
 	
 	window.ontouchstart = (e) => {
+		isDrawing = true;
 		let adjustedPosition;
-		switch (StateManager.getDrawMode())
-		{
-		case StateManager.CURSOR:
+		if (StateManager.getDrawMode() == StateManager.GYRO) {
+			let p = Pointer.getPos();
+			adjustedPosition = control.adjustScreenPos(p.x, p.y);
+		} else {
 			adjustedPosition = control.adjustScreenPos(e.touches[0].pageX, e.touches[0].pageY);
-				break;
-		case StateManager.GYRO:
-			adjustedPosition = getPosFromAcc();
 		}
+		personalDrawingID = CanvasControl.generateUniqueID();
 		socket.emit("canvas_data",{
 			mode: StateManager.getDrawMode(),
-			event: "down",
+			event: "tdown",
 			x: adjustedPosition.x,
-			y: adjustedPosition.y
+			y: adjustedPosition.y,
+			id: personalDrawingID
 		});
 	}
 
 	window.onmousemove = (e) => {
-		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
-		socket.emit("canvas_data",{
-			mode: StateManager.getDrawMode(),
-			event: "move",
-			x: adjustedPosition.x,
-			y: adjustedPosition.y
-		});
+		if (StateManager.getDrawMode() == StateManager.GYRO) {
+			return; // Don't get up in our monkey bussiness
+		}
+		if (isDrawing == true) {
+			let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+			socket.emit("canvas_data",{
+				mode: StateManager.getDrawMode(),
+				event: "mmove",
+				x: adjustedPosition.x,
+				y: adjustedPosition.y,
+				id: personalDrawingID
+			});
+		}
 	}
 
 	window.ontouchmove = (e) => {
-		let adjustedPosition = control.adjustScreenPos(e.touches[0].pageX, e.touches[0].pageY);
-		socket.emit("canvas_data",{
-			mode: StateManager.getDrawMode(),
-			event: "move",
-			x: adjustedPosition.x,
-			y: adjustedPosition.y
-		});
+		if (isDrawing == true) {
+			let adjustedPosition;
+			if (StateManager.getDrawMode() == StateManager.GYRO) {
+				let p = Pointer.getPos();
+				adjustedPosition = control.adjustScreenPos(p.x, p.y);
+			} else {
+				adjustedPosition = control.adjustScreenPos(e.touches[0].pageX, e.touches[0].pageY);
+			}
+			socket.emit("canvas_data",{
+				mode: StateManager.getDrawMode(),
+				event: "tmove",
+				x: adjustedPosition.x,
+				y: adjustedPosition.y,
+				id: personalDrawingID
+			});
+		}
 	}
 	
 	window.onmouseup = (e) => {
+		if (StateManager.getDrawMode() == StateManager.GYRO) {
+			return; // Don't get up in our monkey bussiness
+		}
+		isDrawing = false;
 		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
 		socket.emit("canvas_data",{
 			mode: StateManager.getDrawMode(),
-			event: "up",
+			event: "mup",
 			x: adjustedPosition.x,
-			y: adjustedPosition.y
+			y: adjustedPosition.y,
+			id: personalDrawingID
 		});
 	}
 
 	window.ontouchend = (e) => {
+		isDrawing = false;
 		socket.emit("canvas_data",{
 			mode: StateManager.getDrawMode(),
-			event: "up",
+			event: "tup",
 			x: null,
-			y: null
+			y: null,
+			id: personalDrawingID
 		});
 	}
 	
 	window.ontouchcancel = (e) => {
+		isDrawing = false;
 		socket.emit("canvas_data",{
 			mode: StateManager.getDrawMode(),
-			event: "up",
+			event: "tup",
 			x: null,
-			y: null
+			y: null,
+			id: personalDrawingID
 		});
 	}
 	socket.on("draw_data", (data) => {
 		switch(data.event) {
-			case "down":
+			case "mdown":
+			case "tdown":
 				mouseDown(data);
 				break;
-			case "move":
+			case "mmove":
+			case "tmove":
 				mouseMove(data);
 				break;
-			case "up":
+			case "mup":
+			case "tup":
 				mouseUp(data);
 				break;
 		}
 	});
 
 	function mouseDown(data) {
-		if (data.mode == StateManager.CURSOR) {
-			control.penDown(data.x, data.y);
+		if (data.mode == StateManager.CURSOR || data.mode == StateManager.GYRO) {
+			control.penDown(data.x, data.y, data.id);
 		} else if (data.mode == StateManager.PAN) {
 			control.panStart(data.x, data.y);
 		}
 	}
 
 	function mouseMove(data) {
-		if (data.mode == StateManager.CURSOR) {
-			control.draw(data.x, data.y);
+		if (data.mode == StateManager.CURSOR || data.mode == StateManager.GYRO) {
+			control.draw(data.x, data.y, data.id);
 		} else if (data.mode == StateManager.PAN) {
 			control.pan(data.x, data.y);
 		}
 	}
 
 	function mouseUp(data) {
-		if (data.mode == StateManager.CURSOR || data.mode == StateManager.PAN) {
-			control.penUp();
+		if (data.mode == StateManager.CURSOR || data.mode == StateManager.PAN || data.mode == StateManager.GYRO) {
+			control.penUp(data.id);
 		}
 	}
 
@@ -211,22 +327,27 @@ window.onload = () => {
 	document.addEventListener("pairRequest", (e) => {
 		socket.emit("pair", e.detail.id);
 	});
-	
-	let ACC = new Accelerometer({frequency: 60});
 
-        let accData = {
-                x: 0,
-                y: 0,
-                z: 0
-        };
+	document.addEventListener("recalibrate", (e) => {
+		recalibrate();
+	});
 
-	ACC.addEventListener("reading", (e)=>
-		{
-			accData = {x:ACC.x, y:ACC.y, z:ACC.z};
-		}
-	)
+	socket.on("cursor", (pos) => {
 
-	ACC.start();
-
+		pos = control.adjustScreenPos(-pos.x, -pos.y);
+		Pointer.point(-pos.x, -pos.y);
+		debug(pos.x + ", " + pos.y);
+		if (StateManager.getDrawMode() == StateManager.GYRO && isDrawing == true) {
+			let p = Pointer.getPos();
+			let adjustedPosition = control.adjustScreenPos(p.x, p.y);
+			socket.emit("canvas_data",{
+				mode: StateManager.getDrawMode(),
+				event: "tmove",
+				x: adjustedPosition.x,
+				y: adjustedPosition.y,
+				id: personalDrawingID
+			});
+		} 
+	});
 
 }

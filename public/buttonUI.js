@@ -9,7 +9,10 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 import { StateManager } from './StateManager.js';
-import { CanvasControl } from './main.js';
+import { CanvasControl } from './CanvasControl.js';
+import { Pointer } from './Pointer.js';
+
+var accel_enabled = false;
 
 var ToggleButton = function (_React$Component) {
 	_inherits(ToggleButton, _React$Component);
@@ -17,7 +20,22 @@ var ToggleButton = function (_React$Component) {
 	function ToggleButton(props) {
 		_classCallCheck(this, ToggleButton);
 
-		return _possibleConstructorReturn(this, (ToggleButton.__proto__ || Object.getPrototypeOf(ToggleButton)).call(this, props));
+		var _this = _possibleConstructorReturn(this, (ToggleButton.__proto__ || Object.getPrototypeOf(ToggleButton)).call(this, props));
+
+		_this.variants = {};
+		_this.variants[StateManager.CURSOR] = {
+			mode: StateManager.GYRO,
+			text: "Cursor"
+		};
+		_this.variants[StateManager.GYRO] = {
+			mode: StateManager.CURSOR,
+			text: "Gyro"
+		};
+		_this.variants[StateManager.PAN] = {
+			mode: StateManager.CURSOR,
+			text: "Pan"
+		};
+		return _this;
 	}
 
 	_createClass(ToggleButton, [{
@@ -25,36 +43,22 @@ var ToggleButton = function (_React$Component) {
 		value: function render() {
 			var _this2 = this;
 
-			if (StateManager.getDrawMode() == StateManager.GYRO) {
-				return React.createElement(
-					'button',
-					{ onClick: function onClick() {
-							StateManager.setDrawMode(StateManager.CURSOR);
-							_this2.setState({ changed: true });
-							document.querySelector("body").style.cursor = "default";
-						} },
-					'GYRO MODE'
-				);
-			} else if (StateManager.getDrawMode() == StateManager.CURSOR) {
-				return React.createElement(
-					'button',
-					{ onClick: function onClick() {
-							StateManager.setDrawMode(StateManager.GYRO);
-							_this2.setState({ changed: true });
-							document.querySelector("body").style.cursor = "default";
-						} },
-					'CURSOR MODE'
-				);
-			} else if (StateManager.getDrawMode() == StateManager.PAN) {
-				return React.createElement(
-					'button',
-					{ onClick: function onClick() {
-							StateManager.setDrawMode(StateManager.CURSOR);
-							_this2.setState({ changed: true });
-						} },
-					'PAN MODE'
-				);
-			}
+			var variant = this.variants[StateManager.getDrawMode()];
+
+			return React.createElement(
+				'button',
+				{ className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', onClick: function onClick() {
+						StateManager.setDrawMode(variant.mode);
+						_this2.setState({ changed: true });
+						document.querySelector("body").style.cursor = "default";
+						if (variant.mode == StateManager.GYRO) {
+							Pointer.show();
+						} else {
+							Pointer.hide();
+						}
+					} },
+				variant.text
+			);
 		}
 	}]);
 
@@ -84,9 +88,14 @@ var IDField = function (_React$Component2) {
 		value: function render() {
 			return React.createElement(
 				'h1',
-				null,
+				{ className: 'mx-2 font-sans' },
 				'Your id is: ',
-				this.state.id,
+				React.createElement(
+					'span',
+					{ className: 'font-bold' },
+					' ',
+					this.state.id
+				),
 				' '
 			);
 		}
@@ -123,6 +132,7 @@ var PairForm = function (_React$Component3) {
 			event.preventDefault();
 			this.pairEvent.detail.id = this.state.value;
 			document.dispatchEvent(this.pairEvent);
+			CanvasControl.clearCanvas();
 		}
 	}, {
 		key: 'render',
@@ -130,8 +140,8 @@ var PairForm = function (_React$Component3) {
 			return React.createElement(
 				'form',
 				{ id: 'pairform', onSubmit: this.handleSubmit },
-				React.createElement('input', { key: '1', name: 'id', type: 'text', value: this.state.value, onChange: this.handleChange }),
-				React.createElement('input', { key: '2', type: 'submit', value: 'Pair' })
+				React.createElement('input', { key: '1', name: 'id', type: 'text', className: 'input_boxes m-2', value: this.state.value, onChange: this.handleChange }),
+				React.createElement('input', { key: '2', type: 'submit', className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded', value: 'Pair' })
 			);
 		}
 	}]);
@@ -145,21 +155,16 @@ var ClearButton = function (_React$Component4) {
 	function ClearButton(props) {
 		_classCallCheck(this, ClearButton);
 
-		var _this5 = _possibleConstructorReturn(this, (ClearButton.__proto__ || Object.getPrototypeOf(ClearButton)).call(this, props));
-
-		_this5.control = new CanvasControl(document.getElementById("c"));
-		return _this5;
+		return _possibleConstructorReturn(this, (ClearButton.__proto__ || Object.getPrototypeOf(ClearButton)).call(this, props));
 	}
 
 	_createClass(ClearButton, [{
 		key: 'render',
 		value: function render() {
-			var _this6 = this;
-
 			return React.createElement(
 				'button',
-				{ onClick: function onClick() {
-						_this6.control.clearCanvas();
+				{ className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', onClick: function onClick() {
+						CanvasControl.clearCanvas();
 					} },
 				'Clear'
 			);
@@ -169,5 +174,182 @@ var ClearButton = function (_React$Component4) {
 	return ClearButton;
 }(React.Component);
 
+var DownloadButton = function (_React$Component5) {
+	_inherits(DownloadButton, _React$Component5);
+
+	function DownloadButton(props) {
+		_classCallCheck(this, DownloadButton);
+
+		return _possibleConstructorReturn(this, (DownloadButton.__proto__ || Object.getPrototypeOf(DownloadButton)).call(this, props));
+	}
+
+	_createClass(DownloadButton, [{
+		key: 'render',
+		value: function render() {
+			return React.createElement(
+				'button',
+				{ className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', onClick: function onClick() {
+						var canvas = CanvasControl.getHTMLCanvas();
+						var gh = canvas.toDataURL('png');
+						var link = document.createElement('a');
+						link.download = 'filename.png';
+						link.href = gh;
+						link.click();
+					} },
+				'Download'
+			);
+		}
+	}]);
+
+	return DownloadButton;
+}(React.Component);
+
+var CopyButton = function (_React$Component6) {
+	_inherits(CopyButton, _React$Component6);
+
+	function CopyButton(props) {
+		_classCallCheck(this, CopyButton);
+
+		var _this7 = _possibleConstructorReturn(this, (CopyButton.__proto__ || Object.getPrototypeOf(CopyButton)).call(this, props));
+
+		_this7.state = {
+			buttonText: "Copy"
+		};
+		return _this7;
+	}
+
+	_createClass(CopyButton, [{
+		key: 'render',
+		value: function render() {
+			var _this8 = this;
+
+			return React.createElement(
+				'button',
+				{ className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline', onClick: function onClick() {
+						var canvas = CanvasControl.getHTMLCanvas();
+						canvas.toBlob(function (blob) {
+							try {
+								navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+							} catch (error) {
+
+								console.log("westley");
+								_this8.setState({
+									buttonText: "Chrome only"
+								});
+							}
+						});
+					} },
+				this.state.buttonText
+			);
+		}
+	}]);
+
+	return CopyButton;
+}(React.Component);
+
+var ReorientButton = function (_React$Component7) {
+	_inherits(ReorientButton, _React$Component7);
+
+	function ReorientButton(props) {
+		_classCallCheck(this, ReorientButton);
+
+		var _this9 = _possibleConstructorReturn(this, (ReorientButton.__proto__ || Object.getPrototypeOf(ReorientButton)).call(this, props));
+
+		_this9.recalibrateEvent = new Event('recalibrate');
+		return _this9;
+	}
+
+	_createClass(ReorientButton, [{
+		key: 'render',
+		value: function render() {
+			var _this10 = this;
+
+			return React.createElement(
+				'button',
+				{ className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', onClick: function onClick() {
+						document.dispatchEvent(_this10.recalibrateEvent);
+					} },
+				'Reorient'
+			);
+		}
+	}]);
+
+	return ReorientButton;
+}(React.Component);
+
+var RainbowShit = function (_React$Component8) {
+	_inherits(RainbowShit, _React$Component8);
+
+	function RainbowShit(props) {
+		_classCallCheck(this, RainbowShit);
+
+		var _this11 = _possibleConstructorReturn(this, (RainbowShit.__proto__ || Object.getPrototypeOf(RainbowShit)).call(this, props));
+
+		_this11.state = {
+			value: "✔#000000"
+		};
+		_this11.handleChange = _this11.handleChange.bind(_this11);
+		return _this11;
+	}
+
+	_createClass(RainbowShit, [{
+		key: 'handleChange',
+		value: function handleChange(event) {
+			var color = event.target.value.substring(1);
+			var colorValidation = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+			var valid = colorValidation.test(color);
+			if (valid) {
+				this.setState({ value: "✔" + color });
+				CanvasControl.setDrawColor(color);
+			} else {
+				this.setState({ value: "❌" + color });
+			}
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			return React.createElement('input', { type: 'text', className: 'mx-2 text-black font-bold py-2 px-4 rounded', value: this.state.value, onChange: this.handleChange });
+		}
+	}]);
+
+	return RainbowShit;
+}(React.Component);
+
+var ThiccOMeter = function (_React$Component9) {
+	_inherits(ThiccOMeter, _React$Component9);
+
+	function ThiccOMeter(props) {
+		_classCallCheck(this, ThiccOMeter);
+
+		var _this12 = _possibleConstructorReturn(this, (ThiccOMeter.__proto__ || Object.getPrototypeOf(ThiccOMeter)).call(this, props));
+
+		_this12.state = {
+			value: 1
+		};
+		_this12.handleChange = _this12.handleChange.bind(_this12);
+		return _this12;
+	}
+
+	_createClass(ThiccOMeter, [{
+		key: 'handleChange',
+		value: function handleChange(event) {
+			this.setState({ value: event.target.value });
+			CanvasControl.setThickness(event.target.value);
+		}
+	}, {
+		key: 'render',
+		value: function render() {
+			return React.createElement(
+				'label',
+				null,
+				this.state.value + "px: ",
+				React.createElement('input', { type: 'range', min: '1', max: '100', value: this.state.value, onChange: this.handleChange })
+			);
+		}
+	}]);
+
+	return ThiccOMeter;
+}(React.Component);
+
 var domContainer = document.querySelector('#root');
-ReactDOM.render([React.createElement(ToggleButton, null), React.createElement(IDField, null), React.createElement(PairForm, null), React.createElement(ClearButton, null)], domContainer);
+ReactDOM.render([React.createElement(ToggleButton, null), React.createElement(ClearButton, null), React.createElement(DownloadButton, null), React.createElement(CopyButton, null), React.createElement(ReorientButton, null), React.createElement(RainbowShit, null), React.createElement(ThiccOMeter, null), React.createElement(IDField, null), React.createElement(PairForm, null)], domContainer);

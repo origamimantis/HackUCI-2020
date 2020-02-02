@@ -66,7 +66,7 @@ function removeSocket(id)
 
 io.on("connection", (socket)=>
   {
-	var id = crypto.randomBytes(2).toString('hex');
+	var id = crypto.randomBytes(2).toString('hex').toLowerCase();
 	//  console.log(id);
 	socket.pairId = id;
 	socket.emit('id', {id:id})	
@@ -77,13 +77,27 @@ io.on("connection", (socket)=>
 		  {
 			  sock.emit("draw_data", data);
 		  }
+		//console.log(data);
 	});
 	socket.on('pair',(new_id)=> {
-		removeSocket(socket.pairId);
-		socket.pairId = new_id;
-		addSocket(new_id, socket);
-		socket.emit('id', {id:new_id})	
+		if (new_id.length>0){
+			new_id = new_id.toLowerCase();
+			removeSocket(socket.pairId);
+			socket.pairId = new_id;
+			addSocket(new_id, socket);
+			socket.emit('id', {id:new_id})	
+		}
 		
+	});
+	socket.on('cursor',(xy)=> {
+		  for (let sock of users[socket.pairId])
+		  {
+			  sock.emit("cursor", xy);
+		  }
+			
+	});
+	socket.on('debug',(stuff)=> {
+		console.log(stuff);
 	});
 
 	  

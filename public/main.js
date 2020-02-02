@@ -21,65 +21,12 @@ let phoneVel = {
 let socket;
 
 
-let prev = 
-{
-	time : Date.now(),
-
-	x:
-		{
-			a:0,
-			v:0,
-		},
-	y:
-		{
-			a:0,
-			v:0,
-		},
-	z:
-		{
-			a:0,
-			v:0,
-		}
-}
-
 function debug(stuff)
 {
 
 	socket.emit("debug", stuff);
 
 }
-function handleAcc(e)
-{
-}
-/*
-function accrealbad()
-{
-	if (StateManager.getDrawMode() == StateManager.GYRO)
-	{
-		let ctime = Date.now();
-
-		let delta = (ctime - prev.time)*0.01;
-
-		prev.time = ctime;
-
-		let as = 0;
-		let ax = e.acceleration.x;
-		accState.peak += Math.round(ax);
-		fq.enqueue(accState.peak);
-		let v = fq.variance();
-		debug("v: " + v + "    " + fq.l);
-		if (v >= 2)
-		{
-			prev.x.v = Math.sign(accState.peak)*4;
-		}
-		else
-		{
-			prev.x.v = 0
-		}
-	}
-}
-*/
-
 let calib = 
 	{
 		alpha: 0,
@@ -119,11 +66,14 @@ function handleOri(e)
 	y = Math.max(Math.min( y_sensitivity*y , 1),-1);
 	x = Math.max(Math.min( x_sensitivity*x , 1), -1);
 
-	socket.emit("cursor", 
-		{
-			y: (y + 1)*CanvasControl.getCanvasHeight()/2,
-			x: (x + 1)*CanvasControl.getCanvasWidth()/2
-		});
+	if (StateManager.getDrawMode() == StateManager.GYRO)
+	{
+		socket.emit("cursor", 
+			{
+				y: (y + 1)*CanvasControl.getCanvasHeight()/2,
+				x: (x + 1)*CanvasControl.getCanvasWidth()/2
+			});
+	}
 }
 
 
@@ -382,22 +332,31 @@ window.onload = () => {
 		recalibrate();
 	});
 
+	document.addEventListener("stateSwitch", (e) => {
+		if (e.detail.state == StateManager.GYRO)
+		{
+			recalibrate();
+		}
+	});
+
 	socket.on("cursor", (pos) => {
 
-		pos = control.adjustScreenPos(-pos.x, -pos.y);
-		Pointer.point(-pos.x, -pos.y);
-		//debug((-pos.x) + ", " + (-pos.y));
-		if (StateManager.getDrawMode() == StateManager.GYRO && isDrawing == true) {
-			let p = Pointer.getPos();
-			let adjustedPosition = control.adjustScreenPos(p.x, p.y);
-			socket.emit("canvas_data",{
-				mode: StateManager.getDrawMode(),
-				event: "tmove",
-				x: adjustedPosition.x,
-				y: adjustedPosition.y,
-				id: personalDrawingID
-			});
-		} 
+		if (StateManager.getDrawMode() == StateManager.GYRO)
+		{
+			pos = control.adjustScreenPos(-pos.x, -pos.y);
+			Pointer.point(-pos.x, -pos.y);
+			if (isDrawing == true) {
+				let p = Pointer.getPos();
+				let adjustedPosition = control.adjustScreenPos(p.x, p.y);
+				socket.emit("canvas_data",{
+					mode: StateManager.getDrawMode(),
+					event: "tmove",
+					x: adjustedPosition.x,
+					y: adjustedPosition.y,
+					id: personalDrawingID
+				});
+			} 
+		}
 	});
 
 }

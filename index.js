@@ -24,10 +24,17 @@ const port = 443;
 app.use(express.static(__dirname + "/public"));
 
 
+
 app.get("/",  (req, res) => {
 	res.sendFile( __dirname + "/views/index.html");
 	
 });
+
+var http = require('http');
+http.createServer(function (req, res) {
+    res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+    res.end();
+}).listen(80);
 
 let server = https.createServer(options, app).listen(port, () => console.log("I 80"));
 

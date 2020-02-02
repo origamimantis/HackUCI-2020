@@ -43,7 +43,7 @@ class ToggleButton extends React.Component {
 				this.stateSwitchEvent.detail.state = variant.mode;
 				document.dispatchEvent(this.stateSwitchEvent);
 			}}>
-				{variant.text}
+				{"Current mode: "  + ((variant.text == "Gyro" ) ? "Pointer" : variant.text)}
 			</button>
 		);	
 	}
@@ -182,7 +182,7 @@ class ReorientButton extends React.Component {
                         <button className="bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
 				document.dispatchEvent(this.recalibrateEvent);
 			}}>
-                                Reorient
+                                Recalibrate Pointer
                         </button>
                 );
 	}

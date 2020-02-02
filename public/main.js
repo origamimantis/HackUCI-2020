@@ -82,20 +82,24 @@ function accrealbad()
 
 let calib = 
 	{
+		alpha: 0,
 		beta: 0,
 		gamma: 0
 	}
 
 function recalibrate()
 {
+	calib.alpha = lastAngle.alpha;
 	calib.beta = lastAngle.beta;
 	calib.gamma = lastAngle.gamma;
 }
 
-const sensitivity = 2;
+const x_sensitivity = 2;
+const y_sensitivity = 3;
 
 let lastAngle = 
 	{
+		alpha: 0,
 		beta: 0,
 		gamma: 0
 	}
@@ -104,24 +108,26 @@ let lastAngle =
 function handleOri(e)
 {
 	
-
 	if (StateManager.getDrawMode() == StateManager.GYRO)
 	{
 		lastAngle.beta = e.beta;
-		lastAngle.gamma = e.gamma;
+		//lastAngle.gamma = e.gamma;
+		lastAngle.alpha = e.alpha+180;
 
 		// guaranteed -1 <= x,y <= 1
-		let x = (e.gamma-calib.gamma)/90;
-		let y = (e.beta-calib.beta)/90;
+		let y = -(lastAngle.beta-calib.beta)/90;
+		let x = -(lastAngle.alpha-calib.alpha)/45
+		//let x = (e.gamma-calib.gamma)/90;
 
-		x = Math.max(Math.min( sensitivity*x , 1), -1);
-		y = Math.max(Math.min( sensitivity*y , 1),-1);
+		y = Math.max(Math.min( y_sensitivity*y , 1),-1);
+		x = Math.max(Math.min( x_sensitivity*x , 1), -1);
 
-
-
-		socket.emit("cursor", {x: (x + 1)*CanvasControl.getCanvasWidth()/2, y: (y + 1)*CanvasControl.getCanvasHeight()/2});
+		socket.emit("cursor", 
+			{
+				y: (y + 1)*CanvasControl.getCanvasHeight()/2,
+				x: (x + 1)*CanvasControl.getCanvasWidth()/2
+			});
 	}
-
 }
 
 
@@ -146,7 +152,8 @@ window.onload = () => {
 	//	window.addEventListener("devicemotion", handleAcc);
 		window.addEventListener("deviceorientation", handleOri);
 	}
-	else
+	else                y = Math.max(Math.min( sensitivity*y , 1),-1);
+
 	{
 		console.log("no accelerometer");
 	}
@@ -336,7 +343,7 @@ window.onload = () => {
 
 		pos = control.adjustScreenPos(-pos.x, -pos.y);
 		Pointer.point(-pos.x, -pos.y);
-		debug(pos.x + ", " + pos.y);
+		//debug((-pos.x) + ", " + (-pos.y));
 		if (StateManager.getDrawMode() == StateManager.GYRO && isDrawing == true) {
 			let p = Pointer.getPos();
 			let adjustedPosition = control.adjustScreenPos(p.x, p.y);

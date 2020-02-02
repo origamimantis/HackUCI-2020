@@ -116,6 +116,9 @@ let CanvasControl = {
 			this.canvas.style.top = (clientY - this._lastPan.mouseY) + this._lastPan.y + "px";
 		}
 	},
+	panEnd: function() {
+		this._penDown = false;
+	},
 	adjustScreenPos: function(pageX, pageY) {
 		return {
 			x: pageX - this.canvas.offsetLeft,

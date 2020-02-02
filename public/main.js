@@ -107,35 +107,31 @@ let lastAngle =
 
 function handleOri(e)
 {
-	
-	if (StateManager.getDrawMode() == StateManager.GYRO)
-	{
-		lastAngle.beta = e.beta;
-		//lastAngle.gamma = e.gamma;
-		lastAngle.alpha = e.alpha+180;
+	lastAngle.beta = e.beta;
+	//lastAngle.gamma = e.gamma;
+	lastAngle.alpha = e.alpha-180;
 
-		// guaranteed -1 <= x,y <= 1
-		let y = -(lastAngle.beta-calib.beta)/90;
-		let x = -(lastAngle.alpha-calib.alpha)/45
-		//let x = (e.gamma-calib.gamma)/90;
+	// guaranteed -1 <= x,y <= 1
+	let y = -(lastAngle.beta-calib.beta)/90;
+	let x = -(lastAngle.alpha-calib.alpha)/45
+	//let x = (e.gamma-calib.gamma)/90;
 
-		y = Math.max(Math.min( y_sensitivity*y , 1),-1);
-		x = Math.max(Math.min( x_sensitivity*x , 1), -1);
+	y = Math.max(Math.min( y_sensitivity*y , 1),-1);
+	x = Math.max(Math.min( x_sensitivity*x , 1), -1);
 
-		socket.emit("cursor", 
-			{
-				y: (y + 1)*CanvasControl.getCanvasHeight()/2,
-				x: (x + 1)*CanvasControl.getCanvasWidth()/2
-			});
-	}
+	socket.emit("cursor", 
+		{
+			y: (y + 1)*CanvasControl.getCanvasHeight()/2,
+			x: (x + 1)*CanvasControl.getCanvasWidth()/2
+		});
 }
 
 
 window.onload = () => {
 	let canvas = document.getElementById("c");
 	
-	canvas.width = 640;
-	canvas.height = 480;
+	canvas.width = 960;
+	canvas.height = 720;
 		
 	
 	canvas.style.position = "absolute";
@@ -179,7 +175,10 @@ window.onload = () => {
 	let personalDrawingID = 0;
 	let isDrawing = false;
 
-	window.onmousedown = (e) => {
+	CanvasControl.getHTMLCanvas().onmousedown = (e) => {
+		if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.panStart(e.pageX, e.pageY);
+		}
 		if (StateManager.getDrawMode() == StateManager.GYRO) {
 			return; // Don't get up in our monkey bussiness
 		}
@@ -191,11 +190,19 @@ window.onload = () => {
 			event: "mdown",
 			x: adjustedPosition.x,
 			y: adjustedPosition.y,
-			id: personalDrawingID
+			id: personalDrawingID,
+			extraData: {
+				color: CanvasControl.getDrawColor(),
+				thickness: CanvasControl.getThickness()
+			}
 		});
 	}
 	
-	window.ontouchstart = (e) => {
+	CanvasControl.getHTMLCanvas().ontouchstart = (e) => {
+		if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.panStart(e.touches[0].pageX, e.touches[0].pageY);
+			return;
+		}
 		isDrawing = true;
 		let adjustedPosition;
 		if (StateManager.getDrawMode() == StateManager.GYRO) {
@@ -210,11 +217,19 @@ window.onload = () => {
 			event: "tdown",
 			x: adjustedPosition.x,
 			y: adjustedPosition.y,
-			id: personalDrawingID
+			id: personalDrawingID,
+			extraData: {
+				color: CanvasControl.getDrawColor(),
+				thickness: CanvasControl.getThickness()
+			}
 		});
 	}
 
 	window.onmousemove = (e) => {
+		if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.pan(e.pageX, e.pageY);
+			return;
+		}
 		if (StateManager.getDrawMode() == StateManager.GYRO) {
 			return; // Don't get up in our monkey bussiness
 		}
@@ -231,6 +246,10 @@ window.onload = () => {
 	}
 
 	window.ontouchmove = (e) => {
+		if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.pan(e.touches[0].pageX, e.touches[0].pageY);
+			return;
+		}
 		if (isDrawing == true) {
 			let adjustedPosition;
 			if (StateManager.getDrawMode() == StateManager.GYRO) {
@@ -250,6 +269,10 @@ window.onload = () => {
 	}
 	
 	window.onmouseup = (e) => {
+		if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.panEnd();
+			return;
+		}
 		if (StateManager.getDrawMode() == StateManager.GYRO) {
 			return; // Don't get up in our monkey bussiness
 		}
@@ -265,6 +288,10 @@ window.onload = () => {
 	}
 
 	window.ontouchend = (e) => {
+		if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.panEnd();
+			return;
+		}
 		isDrawing = false;
 		socket.emit("canvas_data",{
 			mode: StateManager.getDrawMode(),
@@ -276,6 +303,10 @@ window.onload = () => {
 	}
 	
 	window.ontouchcancel = (e) => {
+		if (StateManager.getDrawMode() == StateManager.PAN) {
+			control.panEnd();
+			return;
+		}
 		isDrawing = false;
 		socket.emit("canvas_data",{
 			mode: StateManager.getDrawMode(),
@@ -285,6 +316,17 @@ window.onload = () => {
 			id: personalDrawingID
 		});
 	}
+
+	document.addEventListener("clearCanvas", (e) => {
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "clear",
+			x: null,
+			y: null,
+			id: personalDrawingID
+		});	
+	});
+
 	socket.on("draw_data", (data) => {
 		switch(data.event) {
 			case "mdown":
@@ -299,14 +341,15 @@ window.onload = () => {
 			case "tup":
 				mouseUp(data);
 				break;
+			case "clear":
+				control.clearCanvas();
+				break;
 		}
 	});
 
 	function mouseDown(data) {
 		if (data.mode == StateManager.CURSOR || data.mode == StateManager.GYRO) {
-			control.penDown(data.x, data.y, data.id);
-		} else if (data.mode == StateManager.PAN) {
-			control.panStart(data.x, data.y);
+			control.penDown(data.x, data.y, data.id, data.extraData);
 		}
 	}
 

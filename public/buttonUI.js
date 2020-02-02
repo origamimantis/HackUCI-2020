@@ -35,6 +35,8 @@ var ToggleButton = function (_React$Component) {
 			mode: StateManager.CURSOR,
 			text: "Pan"
 		};
+
+		_this.stateSwitchEvent = new CustomEvent("stateSwitch", { detail: { state: StateManager.CURSOR } });
 		return _this;
 	}
 
@@ -56,6 +58,8 @@ var ToggleButton = function (_React$Component) {
 						} else {
 							Pointer.hide();
 						}
+						_this2.stateSwitchEvent.detail.state = variant.mode;
+						document.dispatchEvent(_this2.stateSwitchEvent);
 					} },
 				variant.text
 			);
@@ -155,16 +159,22 @@ var ClearButton = function (_React$Component4) {
 	function ClearButton(props) {
 		_classCallCheck(this, ClearButton);
 
-		return _possibleConstructorReturn(this, (ClearButton.__proto__ || Object.getPrototypeOf(ClearButton)).call(this, props));
+		var _this5 = _possibleConstructorReturn(this, (ClearButton.__proto__ || Object.getPrototypeOf(ClearButton)).call(this, props));
+
+		_this5.clearEvent = new Event("clearCanvas");
+		return _this5;
 	}
 
 	_createClass(ClearButton, [{
 		key: 'render',
 		value: function render() {
+			var _this6 = this;
+
 			return React.createElement(
 				'button',
 				{ className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', onClick: function onClick() {
 						CanvasControl.clearCanvas();
+						document.dispatchEvent(_this6.clearEvent);
 					} },
 				'Clear'
 			);
@@ -210,18 +220,18 @@ var CopyButton = function (_React$Component6) {
 	function CopyButton(props) {
 		_classCallCheck(this, CopyButton);
 
-		var _this7 = _possibleConstructorReturn(this, (CopyButton.__proto__ || Object.getPrototypeOf(CopyButton)).call(this, props));
+		var _this8 = _possibleConstructorReturn(this, (CopyButton.__proto__ || Object.getPrototypeOf(CopyButton)).call(this, props));
 
-		_this7.state = {
+		_this8.state = {
 			buttonText: "Copy"
 		};
-		return _this7;
+		return _this8;
 	}
 
 	_createClass(CopyButton, [{
 		key: 'render',
 		value: function render() {
-			var _this8 = this;
+			var _this9 = this;
 
 			return React.createElement(
 				'button',
@@ -233,7 +243,7 @@ var CopyButton = function (_React$Component6) {
 							} catch (error) {
 
 								console.log("westley");
-								_this8.setState({
+								_this9.setState({
 									buttonText: "Chrome only"
 								});
 							}
@@ -253,21 +263,21 @@ var ReorientButton = function (_React$Component7) {
 	function ReorientButton(props) {
 		_classCallCheck(this, ReorientButton);
 
-		var _this9 = _possibleConstructorReturn(this, (ReorientButton.__proto__ || Object.getPrototypeOf(ReorientButton)).call(this, props));
+		var _this10 = _possibleConstructorReturn(this, (ReorientButton.__proto__ || Object.getPrototypeOf(ReorientButton)).call(this, props));
 
-		_this9.recalibrateEvent = new Event('recalibrate');
-		return _this9;
+		_this10.recalibrateEvent = new Event('recalibrate');
+		return _this10;
 	}
 
 	_createClass(ReorientButton, [{
 		key: 'render',
 		value: function render() {
-			var _this10 = this;
+			var _this11 = this;
 
 			return React.createElement(
 				'button',
 				{ className: 'bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded', onClick: function onClick() {
-						document.dispatchEvent(_this10.recalibrateEvent);
+						document.dispatchEvent(_this11.recalibrateEvent);
 					} },
 				'Reorient'
 			);
@@ -283,13 +293,13 @@ var RainbowShit = function (_React$Component8) {
 	function RainbowShit(props) {
 		_classCallCheck(this, RainbowShit);
 
-		var _this11 = _possibleConstructorReturn(this, (RainbowShit.__proto__ || Object.getPrototypeOf(RainbowShit)).call(this, props));
+		var _this12 = _possibleConstructorReturn(this, (RainbowShit.__proto__ || Object.getPrototypeOf(RainbowShit)).call(this, props));
 
-		_this11.state = {
+		_this12.state = {
 			value: "✔#000000"
 		};
-		_this11.handleChange = _this11.handleChange.bind(_this11);
-		return _this11;
+		_this12.handleChange = _this12.handleChange.bind(_this12);
+		return _this12;
 	}
 
 	_createClass(RainbowShit, [{
@@ -321,13 +331,13 @@ var ThiccOMeter = function (_React$Component9) {
 	function ThiccOMeter(props) {
 		_classCallCheck(this, ThiccOMeter);
 
-		var _this12 = _possibleConstructorReturn(this, (ThiccOMeter.__proto__ || Object.getPrototypeOf(ThiccOMeter)).call(this, props));
+		var _this13 = _possibleConstructorReturn(this, (ThiccOMeter.__proto__ || Object.getPrototypeOf(ThiccOMeter)).call(this, props));
 
-		_this12.state = {
+		_this13.state = {
 			value: 1
 		};
-		_this12.handleChange = _this12.handleChange.bind(_this12);
-		return _this12;
+		_this13.handleChange = _this13.handleChange.bind(_this13);
+		return _this13;
 	}
 
 	_createClass(ThiccOMeter, [{

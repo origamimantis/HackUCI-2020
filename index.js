@@ -80,11 +80,12 @@ io.on("connection", (socket)=>
 		//console.log(data);
 	});
 	socket.on('pair',(new_id)=> {
-		if (new_id.length>0){
+		if (new_id.length>0 && new_id != socket.pairId){
 			new_id = new_id.toLowerCase();
 			removeSocket(socket.pairId);
 			socket.pairId = new_id;
 			addSocket(new_id, socket);
+			console.log(users[new_id].length);
 			socket.emit('id', {id:new_id})	
 		}
 		

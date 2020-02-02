@@ -23,6 +23,8 @@ class ToggleButton extends React.Component {
 			mode: StateManager.CURSOR,
 			text: "Pan"
 		}
+
+		this.stateSwitchEvent = new CustomEvent("stateSwitch", {detail: {state: StateManager.CURSOR}});
 	}
 
 	render() {
@@ -38,6 +40,8 @@ class ToggleButton extends React.Component {
 				} else {
 					Pointer.hide();
 				}
+				this.stateSwitchEvent.detail.state = variant.mode;
+				document.dispatchEvent(this.stateSwitchEvent);
 			}}>
 				{variant.text}
 			</button>
@@ -100,12 +104,14 @@ class PairForm extends React.Component {
 class ClearButton extends React.Component {
 	constructor(props){ 
 		super(props);
+		this.clearEvent = new Event("clearCanvas");
 	} 
 
 	render() {
 		return (
 			<button className="bg-blue-500 m-2 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => {
-				CanvasControl.clearCanvas();		
+				CanvasControl.clearCanvas();
+				document.dispatchEvent(this.clearEvent);
 			}}>
 				Clear
 			</button>

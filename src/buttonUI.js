@@ -1,43 +1,39 @@
 'use strict';
 
 import { StateManager } from './StateManager.js';
+import { CanvasControl } from './main.js';
 
 class ToggleButton extends React.Component {
 	constructor(props) {
 		super(props);
+		this.variants = {
+			StateManager.CURSOR: {
+				mode: StateManager.GYRO,
+				text: "CURSOR"
+			},
+			StateManager.GYRO: {
+				mode: StateManager.CURSOR,
+				text: "GYRO"
+			},
+			StateManager.PAN: {
+				mode: StateManager.CURSOR,
+				text: "PAN"
+			}
+		}
 	}
 
 	render() {
-		if (StateManager.getDrawMode() == StateManager.GYRO) {
-			return (
-				<button onClick={() => {
-					StateManager.setDrawMode(StateManager.CURSOR);
-					this.setState({ changed: true });
-					document.querySelector("body").style.cursor = "default";
-				}}>
-					GYRO MODE
-				</button>
-			);
-		} else if (StateManager.getDrawMode() == StateManager.CURSOR){
-			return (
-				<button onClick={() => {
-					StateManager.setDrawMode(StateManager.GYRO);
-					this.setState({ changed: true });
-					document.querySelector("body").style.cursor = "default";
-				}}>
-					CURSOR MODE
-				</button>
-			);
-		} else if (StateManager.getDrawMode() == StateManager.PAN) {
-			return (
-				<button onClick={() => {
-					StateManager.setDrawMode(StateManager.CURSOR);
-					this.setState({ changed: true });
-				}}>
-					PAN MODE
-				</button>
-			);	
-		}
+		let variant = this.variants[StateManager.getDrawMode()];
+
+		return (
+			<button onClick={() => {
+				StateManager.setDrawMode(variant.mode);
+				this.setState({ changed: true });
+				document.querySelector("body").style.cursor = "default";
+			}}>
+				{variant.text}
+			</button>
+		);	
 	}
 }
 
@@ -92,15 +88,16 @@ class PairForm extends React.Component {
 	}
 }
 
-class clearButton extends React.Component {
+class ClearButton extends React.Component {
 	constructor(props){ 
 		super(props);
+		this.control = new CanvasControl(document.getElementById("c"));
 	} 
 
 	render() {
 		return (
 			<button onClick={() => {
-
+				this.control.clearCanvas();		
 			}}>
 				Clear
 			</button>
@@ -110,4 +107,4 @@ class clearButton extends React.Component {
 }
 
 const domContainer = document.querySelector('#root');
-ReactDOM.render([<ToggleButton />, <IDField />, <PairForm />], domContainer);
+ReactDOM.render([<ToggleButton />, <IDField />, <PairForm />, <ClearButton />], domContainer);

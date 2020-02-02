@@ -54,7 +54,17 @@ export class CanvasControl {
 			y: pageY - this.canvas.offsetTop
 		};
 	}
+
+	clearCanvas() {
+		this.ctx.fillStyle = "#ffffff";
+		this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
+	}
 }
+
+function getPosFromAcc()
+{}
+
+
 
 window.onload = () => {
 	let canvas = document.getElementById("c");
@@ -63,36 +73,130 @@ window.onload = () => {
 	canvas.height = 480;
 	
 	canvas.style.position = "absolute";
-	console.log(canvas.style.left);
 	canvas.style.left = window.innerWidth / 2 - canvas.width / 2 + "px";
 	canvas.style.top = window.innerHeight / 2 - canvas.height / 2 + "px";
 	
-	let ctx = canvas.getContext('2d');
-	ctx.fillStyle = "#ffffff";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-
 	let control = new CanvasControl(canvas);
 	
+	control.clearCanvas();
+
+	// Socketing stuff
+	let onServConn = new CustomEvent("onServConn", { detail: { id : "0000" } });
+	let socket = io.connect("https://applenoodlesmoothie.tech");
+	
+	socket.on("id", (e) => {
+		onServConn.detail.id = e.id;
+		document.dispatchEvent(onServConn);
+	});
+
+
 	window.onmousedown = (e) => {
-		if (StateManager.getDrawMode() == StateManager.CURSOR) {
-			let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
-			control.penDown(adjustedPosition.x, adjustedPosition.y);
-		} else if (StateManager.getDrawMode() == StateManager.PAN) {
-			control.panStart(e.clientX, e.clientY);
+		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "down",
+			x: adjustedPosition.x,
+			y: adjustedPosition.y
+		});
+	}
+	
+	window.ontouchstart = (e) => {
+		let adjustedPosition;
+		switch (StateManager.getDrawMode())
+		{
+		case StateManager.CURSOR:
+			adjustedPosition = control.adjustScreenPos(e.touches[0].pageX, e.touches[0].pageY);
+				break;
+		case StateManager.GYRO:
+			adjustedPosition = getPosFromAcc();
 		}
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "down",
+			x: adjustedPosition.x,
+			y: adjustedPosition.y
+		});
 	}
 
 	window.onmousemove = (e) => {
-		if (StateManager.getDrawMode() == StateManager.CURSOR) {
-			let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
-			control.draw(adjustedPosition.x, adjustedPosition.y);
-		} else if (StateManager.getDrawMode() == StateManager.PAN) {
-			control.pan(e.clientX, e.clientY);
-		}
+		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "move",
+			x: adjustedPosition.x,
+			y: adjustedPosition.y
+		});
+	}
+
+	window.ontouchmove = (e) => {
+		let adjustedPosition = control.adjustScreenPos(e.touches[0].pageX, e.touches[0].pageY);
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "move",
+			x: adjustedPosition.x,
+			y: adjustedPosition.y
+		});
 	}
 	
 	window.onmouseup = (e) => {
-		if (StateManager.getDrawMode() == StateManager.CURSOR || StateManager.getDrawMode() == StateManager.PAN) {
+		let adjustedPosition = control.adjustScreenPos(e.pageX, e.pageY);
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "up",
+			x: adjustedPosition.x,
+			y: adjustedPosition.y
+		});
+	}
+
+	window.ontouchend = (e) => {
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "up",
+			x: null,
+			y: null
+		});
+	}
+	
+	window.ontouchcancel = (e) => {
+		socket.emit("canvas_data",{
+			mode: StateManager.getDrawMode(),
+			event: "up",
+			x: null,
+			y: null
+		});
+	}
+	socket.on("draw_data", (data) => {
+		switch(data.event) {
+			case "down":
+				mouseDown(data);
+				break;
+			case "move":
+				mouseMove(data);
+				break;
+			case "up":
+				mouseUp(data);
+				break;
+		}
+	});
+
+	function mouseDown(data) {
+		if (data.mode == StateManager.CURSOR) {
+			control.penDown(data.x, data.y);
+		} else if (data.mode == StateManager.PAN) {
+			control.panStart(data.x, data.y);
+		}
+	}
+
+	function mouseMove(data) {
+		if (data.mode == StateManager.CURSOR) {
+			control.draw(data.x, data.y);
+		} else if (data.mode == StateManager.PAN) {
+			control.pan(data.x, data.y);
+		}
+	}
+
+	function mouseUp(data) {
+		if (data.mode == StateManager.CURSOR || data.mode == StateManager.PAN) {
 			control.penUp();
 		}
 	}
@@ -103,4 +207,26 @@ window.onload = () => {
 			StateManager.setDrawMode(StateManager.PAN);
 		}
 	});
+	
+	document.addEventListener("pairRequest", (e) => {
+		socket.emit("pair", e.detail.id);
+	});
+	
+	let ACC = new Accelerometer({frequency: 60});
+
+        let accData = {
+                x: 0,
+                y: 0,
+                z: 0
+        };
+
+	ACC.addEventListener("reading", (e)=>
+		{
+			accData = {x:ACC.x, y:ACC.y, z:ACC.z};
+		}
+	)
+
+	ACC.start();
+
+
 }
